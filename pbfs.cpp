@@ -34,16 +34,16 @@ int main(int argc, char* argv[]) {
     }
     char* inputfile = argv[1];
     int src = atoi( argv[2] );
-    char* orderfile = argv[3];
+    int num_threads = atoi( argv[3] );
     
     adjacency_list graph;
     order_list order;
+    
     read_adjacency_list(graph, inputfile);
     if( graph.find(src) == graph.end() ) {
         cout << "error: non-existant source" << endl;
         return -1;
     }
-    read_order_list(order, orderfile);
     print_graph(graph);
     map<int, int> vert_orders;
     
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     
     print_orders(vert_orders );
     
-    // OUTPUT GETS PRINTED HERE
+    // GENERATE ORDER FILE AND PRINT RUN-TIME AND NUMBER OF THREADS HERE
     
     return 0;
 }
