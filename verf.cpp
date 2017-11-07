@@ -149,16 +149,16 @@ void read_adjacency_list(adjacency_list &g, char* inputfile) {
 /* read an order list */
 void read_order_list(order_list &g, char* inputfile) {
     
-    std::ifstream infile;
+    ifstream infile;
     infile.open(inputfile);
-    std::string line;
+    string line;
     
     int vertex, level;
     
     // for each line, get the vertex and the level
     while( getline(infile, line) ) {
-        vertex = atoi(line[0].c_str());
-        level = atoi(line[2].c_str());
+        vertex = atoi( line.substr(0,1).c_str() );
+        level = atoi( line.substr(2,3).c_str() );
         g.insert(make_pair(vertex, level));
     }
     
