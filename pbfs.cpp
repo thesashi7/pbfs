@@ -9,32 +9,32 @@
 #include<map>
 #include <vector>
 #include <algorithm>
+#include <omp.h>
+#include <mutex>
 
 using namespace std;
 
 // short-cut for declaring a graph
 typedef std::map<int, std::list<int> > adjacency_list;
-typedef std::map<int, int > order_list;
 
 void read_adjacency_list(adjacency_list&, char*);
-void read_order_list(order_list&, char*);
-std::vector<vector<int> > breadth_first_search_2(adjacency_list&, int, map<int, int>& );
-std::map<int, int> breadth_first_search(adjacency_list&, int, map<int, int>& );
+std::map<int, int> parallel_breadth_first_search(adjacency_list&, int, map<int, int>& );
 void print_graph( adjacency_list );
 void print_orders( map<int, int>);
-bool verify_2(vector<vector<int> >, vector<int>);
-bool verify(map<int, int>, map<int, int>);
+void generate_order_file(map<int, int>);
 
 
 int main(int argc, char* argv[]) {
     
-    if(argc != 3) {
-        std::cout << "usage:  ./bfs  input_graph  src" << std::endl;
+    if(argc != 4) {
+        std::cout << "usage:  ./bfs  input_graph  src num_threads" << std::endl;
         return -1;
     }
     char* inputfile = argv[1];
     int src = atoi( argv[2] );
     int num_threads = atoi( argv[3] );
+    
+    omp_set_num_threads(num_threads);
     
     adjacency_list graph;
     order_list order;
@@ -44,66 +44,14 @@ int main(int argc, char* argv[]) {
         cout << "error: non-existant source" << endl;
         return -1;
     }
-    print_graph(graph);
     map<int, int> vert_orders;
     
-    map<int, int> node_level = breadth_first_search(graph, src, vert_orders);
+    map<int, int> node_level = parallel_breadth_first_search(graph, src, vert_orders);
     
-    print_orders(vert_orders );
-    
-    // GENERATE ORDER FILE AND PRINT RUN-TIME AND NUMBER OF THREADS HERE
+    generate_order_file(node_level);
     
     return 0;
 }
-
-
-bool verify_2(vector<vector<int> > level_list, vector<int> order)
-{
-    bool is_correct;
-    int level_i;
-    is_correct = true;
-    level_i = 0;
-    
-    for(int i=0; i < level_list.size(); i++)
-    {
-        vector<int> level;
-        level = level_list[i];
-        int cur_size;
-        cur_size = level.size();
-        if(level_i > order.size())
-            return false;
-        while(level_i < order.size())
-        {
-            int node = order[level_i];
-            if (std::find(level.begin(), level.end(),node) == level.end())
-            {
-                return false;
-            }
-            level_i++;
-        }
-    }
-    if(level_i != order.size())
-        is_correct = false;
-    return is_correct;
-}
-
-bool verify(map<int, int> node_level_s, map<int, int> node_level_p)
-{
-    bool is_correct;
-    is_correct = true;
-    
-    if(node_level_s.size() == node_level_p.size())
-    {
-        for(int i=0; i<node_level_s.size(); i++)
-        {
-            if(node_level_s[i] != node_level_p[i])
-                return false;
-        }
-    }
-    else is_correct = false;
-    return is_correct;
-}
-
 
 /* read an adjacency list */
 void read_adjacency_list(adjacency_list &g, char* inputfile) {
@@ -152,29 +100,6 @@ void read_adjacency_list(adjacency_list &g, char* inputfile) {
     return;
 }
 
-/* read an order list */
-void read_order_list(order_list &g, char* orderfile) {
-    
-    ifstream infile;
-    infile.open(orderfile);
-    string line;
-    
-    int vertex, level;
-    
-    // for each line, get the vertex and the level
-    while( getline(infile, line) ) {
-        vertex = atoi( line.substr(0,1).c_str() );
-        level = atoi( line.substr(2,3).c_str() );
-        g.insert(make_pair(vertex, level));
-    }
-    
-    
-    infile.close();
-    
-    return;
-}
-
-
 void print_graph( adjacency_list g ) {
     
     adjacency_list::iterator g_itr;
@@ -196,66 +121,22 @@ void print_graph( adjacency_list g ) {
     return;
 }
 
-// perform breadth-first search
-std::vector<vector<int> > breadth_first_search_2( adjacency_list& graph, int src, map<int, int>& vert_orders) {
-    std::vector<vector<int> > level_list;
-    // initialize visited and queue
-    bool* visited = new bool[graph.size()];
-    for(int i=0; i<graph.size(); i++)
-        visited[i]=false;
-    queue<int> next_verts;
-    
-    /*
-     breadth-first search
-     */
-    int order = 1;
-    next_verts.push(src);
-    visited[src-1] = true;
-    while(next_verts.size()>0)
-    {
-        vector<int> level;
-        queue<int> temp_queue;
-        while(next_verts.size()>0)
-        {
-            int cur_node = next_verts.front();
-            next_verts.pop();
-            level.push_back(cur_node);
-            vert_orders.insert(std::make_pair(cur_node, order++));
-            list<int>nb;
-            map<int, std::list<int> >::iterator it = graph.find(cur_node);
-            if(it != graph.end())
-            {
-                nb = it->second;
-                std::list<int>::iterator it;
-                for (it = nb.begin(); it != nb.end(); ++it)
-                {
-                    if(visited[(*it)-1] == false)
-                    {
-                        temp_queue.push(*it);
-                        visited[(*it)-1] = true;
-                    }
-                }
-            }
-        }
-        level_list.push_back(level);
-        next_verts = temp_queue;
-    }
-    
-    return level_list;
-}
-
-// perform breadth-first search
-map<int, int> breadth_first_search( adjacency_list& graph, int src, map<int, int>& vert_orders) {
+// perform parallel breadth-first search
+map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map<int, int>& vert_orders) {
     map<int, int> node_level;
     
+    mutex l;
+    mutex k;
+    
     // initialize visited and queue
     bool* visited = new bool[graph.size()];
+    #pragma omp parallel for
     for(int i=0; i<graph.size(); i++)
         visited[i]=false;
     queue<int> next_verts;
     
     /*
-     breadth-first search
+     parallel breadth-first search
      */
     int order = 1;
     int lev = 0;
@@ -265,34 +146,62 @@ map<int, int> breadth_first_search( adjacency_list& graph, int src, map<int, int
     {
         vector<int> level;
         queue<int> temp_queue;
+        #pragma omp critical
         while(next_verts.size()>0)
         {
+            l.lock();
             int cur_node = next_verts.front();
             next_verts.pop();
+            l.unlock();
+            
             node_level.insert(std::make_pair(cur_node, lev));	
             vert_orders.insert(std::make_pair(cur_node, order++));
             list<int>nb;
             map<int, std::list<int> >::iterator it = graph.find(cur_node);
+            
             if(it != graph.end())
             {
+                l.lock();
                 nb = it->second;
+                l.unlock();
+                
                 std::list<int>::iterator it;
                 for (it = nb.begin(); it != nb.end(); ++it)
                 {
+                    l.lock();
                     if(visited[(*it)-1] == false)
                     {
+                        k.lock();
                         temp_queue.push(*it);
+                        k.unlock();
+                        k.lock();
                         visited[(*it)-1] = true;
+                        k.unlock();
                     }
+                    l.unlock();
                 }	
             }
         }
+        #pragma omp barrier
         next_verts = temp_queue;
         lev++;
         
     }
     
     return node_level;
+}
+
+void generate_order_file(map<int, int> m) {
+    ofstream ofs;
+    ofs.open("pbfs_order.txt", ofstream::out);
+    
+    
+    for(map<int, int>::iterator iter = m.begin(); iter != m.end(); ++iter)
+        ofs << iter->first << " " << iter->second << "\n";
+    
+    ofs.close();
+    
+    return;
 }
 
 // print the final orders
