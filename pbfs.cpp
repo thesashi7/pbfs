@@ -156,7 +156,6 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map
     {
 
         vector<int> level;
-        queue<int> temp_queue;
         vector<int> temp_list;
         while(next_verts.size() > 0)
         {
@@ -172,8 +171,9 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map
             //std::cout<<omp_get_thread_num()<<std::endl;
             int cur_node = temp_list[i];
 
+            omp_set_lock(&l);
             node_level.insert(std::make_pair(cur_node, lev));
-            vert_orders.insert(std::make_pair(cur_node, order++));
+            omp_unset_lock(&l);
             list<int>nb;
             map<int, std::list<int> >::iterator it = graph.find(cur_node);
 
@@ -197,7 +197,7 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map
                 }
             }
         }
-        //#pragma omp barrier
+        #pragma omp barrier
         //next_verts = temp_queue;
         lev++;
     }
