@@ -95,14 +95,15 @@ bool verify(map<int, int> node_level_s, map<int, int> node_level_p)
 {
     bool is_correct;
     is_correct = true;
-
     if(node_level_s.size() == node_level_p.size())
     {
-        for(int i=0; i<node_level_s.size(); i++)
-        {
-            if(node_level_s[i] != node_level_p[i])
-                return false;
-        }
+      for(std::map<int,int>::iterator iter = node_level_s.begin();
+          iter != node_level_s.end(); ++iter)
+      {
+        int k =  iter->first;
+        if(iter->second != node_level_p[k])
+          return false;
+      }
     }
     else is_correct = false;
     return is_correct;
