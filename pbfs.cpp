@@ -19,7 +19,7 @@ typedef std::map<int, std::list<int> > adjacency_list;
 typedef unsigned long long uint64; //for timing
 
 void read_adjacency_list(adjacency_list&, char*);
-std::map<int, int> parallel_breadth_first_search(adjacency_list&, int, map<int, int>& );
+std::map<int, int> parallel_breadth_first_search(adjacency_list&, int);
 void print_graph( adjacency_list );
 void print_orders( map<int, int>);
 void generate_order_file(map<int, int>);
@@ -45,11 +45,10 @@ int main(int argc, char* argv[]) {
         cout << "error: non-existant source" << endl;
         return -1;
     }
-    map<int, int> vert_orders;
     uint64 time_start, time_stop, runtime;
 
     time_start = getTimeMs64();
-    map<int, int> node_level = parallel_breadth_first_search(graph, src, vert_orders);
+    map<int, int> node_level = parallel_breadth_first_search(graph, src);
     time_stop = getTimeMs64();
     runtime = (time_stop - time_start) / 10;
     cout << "The runtime is: " << runtime << " ms" << endl;
@@ -128,7 +127,7 @@ void print_graph( adjacency_list g ) {
 }
 
 // perform parallel breadth-first search
-map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map<int, int>& vert_orders) {
+map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
     map<int, int> node_level;
     omp_lock_t l;
     omp_lock_t k;
