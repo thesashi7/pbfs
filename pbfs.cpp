@@ -10,18 +10,20 @@
 #include <vector>
 #include <algorithm>
 #include <omp.h>
-#include <mutex>
+#include <sys/time.h>
 
 using namespace std;
 
 // short-cut for declaring a graph
 typedef std::map<int, std::list<int> > adjacency_list;
+typedef unsigned long long uint64; //for timing
 
 void read_adjacency_list(adjacency_list&, char*);
 std::map<int, int> parallel_breadth_first_search(adjacency_list&, int, map<int, int>& );
 void print_graph( adjacency_list );
 void print_orders( map<int, int>);
 void generate_order_file(map<int, int>);
+uint64 getTimeMs64();
 
 
 int main(int argc, char* argv[]) {
@@ -37,7 +39,6 @@ int main(int argc, char* argv[]) {
     omp_set_num_threads(num_threads);
     
     adjacency_list graph;
-    order_list order;
     
     read_adjacency_list(graph, inputfile);
     if( graph.find(src) == graph.end() ) {
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]) {
     
     map<int, int> node_level = parallel_breadth_first_search(graph, src, vert_orders);
     
+    cout << "The number of threads is: " << num_threads << endl;
     generate_order_file(node_level);
     
     return 0;
@@ -125,8 +127,11 @@ void print_graph( adjacency_list g ) {
 map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map<int, int>& vert_orders) {
     map<int, int> node_level;
     
-    mutex l;
-    mutex k;
+    omp_lock_t* l;
+    omp_lock_t* k;
+    
+    uint64 time_start, time_stop, runtime;
+    time_start = getTimeMs64();
     
     // initialize visited and queue
     bool* visited = new bool[graph.size()];
@@ -149,10 +154,10 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map
         #pragma omp critical
         while(next_verts.size()>0)
         {
-            l.lock();
+            omp_set_lock(l);
             int cur_node = next_verts.front();
             next_verts.pop();
-            l.unlock();
+            omp_unset_lock(l);
             
             node_level.insert(std::make_pair(cur_node, lev));	
             vert_orders.insert(std::make_pair(cur_node, order++));
@@ -161,24 +166,24 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map
             
             if(it != graph.end())
             {
-                l.lock();
+                omp_set_lock(l);
                 nb = it->second;
-                l.unlock();
+                omp_unset_lock(l);
                 
                 std::list<int>::iterator it;
                 for (it = nb.begin(); it != nb.end(); ++it)
                 {
-                    l.lock();
+                    omp_set_lock(l);
                     if(visited[(*it)-1] == false)
                     {
-                        k.lock();
+                        omp_set_lock(k);
                         temp_queue.push(*it);
-                        k.unlock();
-                        k.lock();
+                        omp_unset_lock(k);
+                        omp_set_lock(k);
                         visited[(*it)-1] = true;
-                        k.unlock();
+                        omp_unset_lock(k);
                     }
-                    l.unlock();
+                    omp_unset_lock(l);
                 }	
             }
         }
@@ -187,6 +192,10 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src, map
         lev++;
         
     }
+    
+    time_stop = getTimeMs64();
+    runtime = (time_stop - time_start) / 10;
+    cout << "The runtime is: " << runtime << " ms" << endl;
     
     return node_level;
 }
@@ -212,6 +221,19 @@ void print_orders( map<int, int> vert_orders ) {
         cout << (*map_itr).first << "\t" << (*map_itr).second << endl;
     }
     return;
+}
+
+/* Get system time */
+uint64 getTimeMs64() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    uint64 ret = tv.tv_usec;
+    // convert micro secs (10^-6) to millisecs (10^-3)
+    ret /= 1000;
+    
+    // add seconds (10^0) after converting to millisecs (10^-3)
+    ret += (tv.tv_sec*1000);
+    return ret;
 }
 
 

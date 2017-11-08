@@ -7,16 +7,19 @@
 #include<string>
 #include<queue>
 #include<map>
+#include <sys/time.h>
 
 using namespace std;
 
 // short-cut for declaring a graph
 typedef std::map<int, std::list<int> > adjacency_list;
+typedef unsigned long long uint64; //for timing
 
 void read_adjacency_list(adjacency_list&, char*);
 void breadth_first_search(adjacency_list&, int, map<int, int>& );
 void print_graph( adjacency_list );
 void print_orders( map<int, int>);
+uint64 getTimeMs64();
 
 int main(int argc, char* argv[]) {
 
@@ -114,6 +117,9 @@ void print_graph( adjacency_list g ) {
 // perform breadth-first search
 void breadth_first_search( adjacency_list& graph, int src, map<int, int>& vert_orders) {
 
+    uint64 time_start, time_stop, runtime;
+    time_start = getTimeMs64();
+    
   // initialize visited and queue
 	bool* visited = new bool[graph.size()];
 	for(int i=0; i<graph.size(); i++) 
@@ -145,18 +151,14 @@ void breadth_first_search( adjacency_list& graph, int src, map<int, int>& vert_o
 						visited[(*it)-1] = true;
 					}
 			}
-	// for(int i=0; i<nb.size(); i++)
-	// {
-	// 		int cur_nb = nd.get(i);
-	//    if(visited[cur_nb] == false){
-	//			next_verts.push(cur_nb);
-	//			visited[cur_nb] = true;		
-	//		}			
-	// }
 
 		}
 	}
 
+    time_stop = getTimeMs64();
+    runtime = (time_stop - time_start) / 10;
+    cout << "The runtime is: " << runtime << " ms" << endl;
+    
 	return;
 }
 
@@ -170,6 +172,19 @@ void print_orders( map<int, int> vert_orders ) {
 	return;
 }
 
+/* Get system time */
+uint64 getTimeMs64()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    uint64 ret = tv.tv_usec;
+    // convert micro secs (10^-6) to millisecs (10^-3)
+    ret /= 1000;
+    
+    // add seconds (10^0) after converting to millisecs (10^-3)
+    ret += (tv.tv_sec*1000);
+    return ret;
+}
 
 
 
