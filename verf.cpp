@@ -22,7 +22,7 @@ std::map<int, int> breadth_first_search(adjacency_list&, int );
 void print_graph( adjacency_list );
 void print_orders( map<int, int>);
 bool verify(map<int, int>, map<int, int>);
-
+std::vector<std::string> split(string, char);
 
 int main(int argc, char* argv[]) {
 
@@ -134,9 +134,10 @@ void read_order_list(order_list &g, char* orderfile) {
 
     // for each line, get the vertex and the level
     while( getline(infile, line) ) {
-        vertex = atoi( line.substr(0,1).c_str() );
-        level = atoi( line.substr(2,3).c_str() );
-        g.insert(make_pair(vertex, level));
+      vector<string> splited = split(line,' ');
+      vertex = atoi( splited[0].c_str() );
+      level = atoi( splited[1].c_str() );
+      g.insert(make_pair(vertex, level));
     }
 
 
@@ -226,4 +227,16 @@ void print_orders( map<int, int> vert_orders ) {
         cout << (*map_itr).first << "\t" << (*map_itr).second << endl;
     }
     return;
+}
+
+vector<string> split(string str, char delimiter) {
+  std::vector<std::string> splited;
+  std::size_t pos = 0, found;
+  while((found = str.find_first_of(delimiter, pos)) != std::string::npos) {
+     splited.push_back(str.substr(pos, found - pos));
+     pos = found+1;
+  }
+  splited.push_back(str.substr(pos));
+
+  return splited;
 }
