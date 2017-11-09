@@ -29,7 +29,7 @@ uint64 getTimeMs64();
 int main(int argc, char* argv[]) {
 
     if(argc != 4) {
-        std::cout << "usage:  ./bfs  input_graph  src num_threads" << std::endl;
+        std::cout << "usage:  ./pbfs  input_graph  src num_threads" << std::endl;
         return -1;
     }
     char* inputfile = argv[1];
