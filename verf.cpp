@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
     adjacency_list graph;
     order_list order;
     read_adjacency_list(graph, inputfile);
+  //  print_graph(graph);
     if( graph.find(src) == graph.end() ) {
         cout << "error: non-existant source" << endl;
         return -1;
@@ -82,37 +83,18 @@ void read_adjacency_list(adjacency_list &g, char* inputfile) {
     infile.open(inputfile);
     std::string line;
 
-    int v1,v2;
+    int v1;
     std::list<int> adjacent_verts;
 
     // for each line, get numbers after a space
     while( getline(infile, line) ) {
         adjacent_verts.clear();
-        int a=0;
-        int b=0;
-        int v=0;
-        string v_str;
-        bool v1_found=false;
-        for(int i=0; i<line.length(); i++) {
-            if( line[i]==' ') { // if the vertex has neighbors
-                b=i;
-                v_str = line.substr(a,b);
-                v = atoi(v_str.c_str() ); // convert variable v_str to a c-string
-                if( v1_found == false) {
-                    v1 = v;
-                    v1_found=true;
-                }
-                else
-                    adjacent_verts.push_back(v);
-                a=b+1;
-            }
+        vector<string> splited = split(line,' ');
+        v1 = atoi( splited[0].c_str() );
+        for(int j=1; j<splited.size(); j++)
+        {
+          adjacent_verts.push_back(atoi(splited[j].c_str()));
         }
-        v_str = line.substr(a,b);
-        v=atoi(v_str.c_str() ); // convert variable v_str to a c-string
-        if( v1_found == false)
-            v1 = v;
-        else
-            adjacent_verts.push_back(v);
         g.insert( std::make_pair( v1, adjacent_verts ) );
 
     }
@@ -130,7 +112,6 @@ void read_order_list(order_list &g, char* orderfile) {
     string line;
 
     int vertex, level;
-
     // for each line, get the vertex and the level
     while( getline(infile, line) ) {
       vector<string> splited = split(line,' ');
@@ -138,8 +119,6 @@ void read_order_list(order_list &g, char* orderfile) {
       level = atoi( splited[1].c_str() );
       g.insert(make_pair(vertex, level));
     }
-
-
     infile.close();
 
     return;

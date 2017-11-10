@@ -24,7 +24,7 @@ void print_graph( adjacency_list );
 void print_orders( map<int, int>);
 void generate_order_file(map<int, int>);
 uint64 getTimeMs64();
-
+std::vector<std::string> split(string, char);
 
 int main(int argc, char* argv[]) {
 
@@ -65,37 +65,18 @@ void read_adjacency_list(adjacency_list &g, char* inputfile) {
     infile.open(inputfile);
     std::string line;
 
-    int v1,v2;
+    int v1;
     std::list<int> adjacent_verts;
 
     // for each line, get numbers after a space
     while( getline(infile, line) ) {
         adjacent_verts.clear();
-        int a=0;
-        int b=0;
-        int v=0;
-        string v_str;
-        bool v1_found=false;
-        for(int i=0; i<line.length(); i++) {
-            if( line[i]==' ') { // if the vertex has neighbors
-                b=i;
-                v_str = line.substr(a,b);
-                v = atoi(v_str.c_str() ); // convert variable v_str to a c-string
-                if( v1_found == false) {
-                    v1 = v;
-                    v1_found=true;
-                }
-                else
-                    adjacent_verts.push_back(v);
-                a=b+1;
-            }
+        vector<string> splited = split(line,' ');
+        v1 = atoi( splited[0].c_str() );
+        for(int j=1; j<splited.size(); j++)
+        {
+          adjacent_verts.push_back(atoi(splited[j].c_str()));
         }
-        v_str = line.substr(a,b);
-        v=atoi(v_str.c_str() ); // convert variable v_str to a c-string
-        if( v1_found == false)
-            v1 = v;
-        else
-            adjacent_verts.push_back(v);
         g.insert( std::make_pair( v1, adjacent_verts ) );
 
     }
@@ -104,6 +85,7 @@ void read_adjacency_list(adjacency_list &g, char* inputfile) {
 
     return;
 }
+
 
 void print_graph( adjacency_list g ) {
     adjacency_list::iterator g_itr;
@@ -233,4 +215,16 @@ uint64 getTimeMs64() {
     // add seconds (10^0) after converting to millisecs (10^-3)
     ret += (tv.tv_sec*1000);
     return ret;
+}
+
+vector<string> split(string str, char delimiter) {
+  std::vector<std::string> splited;
+  std::size_t pos = 0, found;
+  while((found = str.find_first_of(delimiter, pos)) != std::string::npos) {
+     splited.push_back(str.substr(pos, found - pos));
+     pos = found+1;
+  }
+  splited.push_back(str.substr(pos));
+
+  return splited;
 }
