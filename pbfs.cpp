@@ -112,9 +112,12 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
  map<int, int> node_level;
     omp_lock_t l;
     omp_lock_t k;
-
+    omp_lock_t m;
+    omp_lock_t n;
     omp_init_lock(&l);
     omp_init_lock(&k);
+    omp_init_lock(&m);
+    omp_init_lock(&n);
     // initialize visited and queue
     map<int, bool>visited;
     queue<int> next_verts;
@@ -141,13 +144,13 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
             //no need to lock this cuz its already divided to different threads by
             // openmp
             int cur_node = temp_list[i];
-            omp_set_lock(&k);
+            omp_set_lock(&n);
             node_level.insert(std::make_pair(cur_node, lev));
-            omp_unset_lock(&k);
+            omp_unset_lock(&n);
             list<int>nb;
-            omp_set_lock(&k);
+
             map<int, std::list<int> >::iterator it = graph.find(cur_node);
-            omp_unset_lock(&k);
+
 
             if(it != graph.end())
             {
@@ -160,13 +163,16 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
                     omp_set_lock(&l);
                     if(visited.find(*it) == visited.end())
                     {
+                        omp_set_lock(&m);
+                        if(visited.find(*it) == visited.end())
+                          visited.insert(std::make_pair(*it, 1));
+                        omp_unset_lock(&m);
+                        if(visited.find(*it) != visited.end())
+                        {
                         omp_set_lock(&k);
                         next_verts.push(*it);
                         omp_unset_lock(&k);
-
-                        omp_set_lock(&k);
-                        visited.insert(std::make_pair(*it, 1));
-                        omp_unset_lock(&k);
+                        }
                     }
                     omp_unset_lock(&l);
                 }
