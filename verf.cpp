@@ -44,7 +44,6 @@ int main(int argc, char* argv[]) {
     read_order_list(order, orderfile);
     map<int, int> vert_orders;
     map<int, int> node_level = breadth_first_search(graph, src);
-
     // Verification and OUTPUT GETS PRINTED HERE
     if(verify(node_level, order))
     {
@@ -174,9 +173,7 @@ map<int, int> breadth_first_search( adjacency_list& graph, int src) {
     map<int, int> node_level;
 
     // initialize visited and queue
-    bool* visited = new bool[graph.size()];
-    for(int i=0; i<graph.size(); i++)
-        visited[i]=false;
+    map<int, bool>visited;
     queue<int> next_verts;
 
     /*
@@ -185,7 +182,7 @@ map<int, int> breadth_first_search( adjacency_list& graph, int src) {
     int order = 1;
     int lev = 0;
     next_verts.push(src);
-    visited[src-1] = true;
+    visited.insert(std::make_pair(src, lev));
     while(next_verts.size()>0)
     {
         vector<int> level;
@@ -203,10 +200,10 @@ map<int, int> breadth_first_search( adjacency_list& graph, int src) {
                 std::list<int>::iterator it;
                 for (it = nb.begin(); it != nb.end(); ++it)
                 {
-                    if(visited[(*it)-1] == false)
+                    if(visited.find(*it) == visited.end())
                     {
                         temp_queue.push(*it);
-                        visited[(*it)-1] = true;
+                        visited.insert(std::make_pair(*it, 1));
                     }
                 }
             }

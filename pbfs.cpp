@@ -46,11 +46,10 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     uint64 time_start, time_stop, runtime;
-
     time_start = getTimeMs64();
     map<int, int> node_level = parallel_breadth_first_search(graph, src);
     time_stop = getTimeMs64();
-    runtime = (time_stop - time_start) / 10;
+    runtime = (time_stop - time_start) ;
     cout << "The runtime is: " << runtime << " ms" << endl;
 
     cout << "The number of threads is: " << num_threads << endl;
@@ -135,13 +134,7 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
     omp_init_lock(&l);
     omp_init_lock(&k);
     // initialize visited and queue
-    bool* visited = new bool[graph.size()];
-    #pragma omp parallel for
-    for(int i=0; i<graph.size(); i++)
-    {
-          visited[i]=false;
-          //std::cout<<i<<std::endl;
-    }
+    map<int, bool>visited;
     queue<int> next_verts;
 
     /*
@@ -150,10 +143,9 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
     int order = 1;
     int lev = 0;
     next_verts.push(src);
-    visited[src-1] = true;
+    visited.insert(std::make_pair(src, lev));
     while(next_verts.size()>0)
     {
-
         vector<int> level;
         vector<int> temp_list;
         while(next_verts.size() > 0)
@@ -161,20 +153,19 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
           temp_list.push_back(next_verts.front());
           next_verts.pop();
         }
-
-        #pragma omp parallel for
+        #pragma omp parallel
         for(int i=0; i<temp_list.size(); i++)
         {
             //no need to lock this cuz its already divided to different threads by
             // openmp
-            //std::cout<<omp_get_thread_num()<<std::endl;
             int cur_node = temp_list[i];
-
-            omp_set_lock(&l);
+            omp_set_lock(&k);
             node_level.insert(std::make_pair(cur_node, lev));
-            omp_unset_lock(&l);
+            omp_unset_lock(&k);
             list<int>nb;
+            omp_set_lock(&k);
             map<int, std::list<int> >::iterator it = graph.find(cur_node);
+            omp_unset_lock(&k);
 
             if(it != graph.end())
             {
@@ -185,12 +176,15 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
                 for (it = nb.begin(); it != nb.end(); ++it)
                 {
                     omp_set_lock(&l);
-                    if(visited[(*it)-1] == false)
+                    if(visited.find(*it) == visited.end())
                     {
                         omp_set_lock(&k);
                         next_verts.push(*it);
                         omp_unset_lock(&k);
-                        visited[(*it)-1] = true;
+
+                        omp_set_lock(&k);
+                        visited.insert(std::make_pair(*it, 1));
+                        omp_unset_lock(&k);
                     }
                     omp_unset_lock(&l);
                 }
@@ -229,6 +223,7 @@ void print_orders( map<int, int> vert_orders ) {
 
 /* Get system time */
 uint64 getTimeMs64() {
+
     struct timeval tv;
     gettimeofday(&tv, NULL);
     uint64 ret = tv.tv_usec;
