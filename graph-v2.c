@@ -6,7 +6,7 @@
 
 
 
-    #define MAX_VERTICES 900000;
+    #define MAX_VERTICES 9000;
 
     #define MAX_EDGES MAX_VERTICES-1;
 
