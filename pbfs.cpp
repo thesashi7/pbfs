@@ -112,11 +112,12 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
  map<int, int> node_level;
     omp_lock_t l;
     omp_lock_t k;
-    omp_lock_t m;
+    omp_lock_t m[graph.size()];
     omp_lock_t n;
     omp_init_lock(&l);
     omp_init_lock(&k);
-    omp_init_lock(&m);
+    for(int i=0; i<graph.size(); i++)
+      omp_init_lock(&m[i]);
     omp_init_lock(&n);
     // initialize visited and queue
     map<int, bool>visited;
@@ -129,6 +130,8 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
     int lev = 0;
     next_verts.push(src);
     visited.insert(std::make_pair(src, lev));
+    node_level.insert(std::make_pair(src, lev));
+    lev++;
     while(next_verts.size()>0)
     {
         vector<int> level;
@@ -138,15 +141,13 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
           temp_list.push_back(next_verts.front());
           next_verts.pop();
         }
+        int size = temp_list.size();
         #pragma omp parallel
-        for(int i=0; i<temp_list.size(); i++)
+        for(int i=0; i<size; i++)
         {
             //no need to lock this cuz its already divided to different threads by
             // openmp
             int cur_node = temp_list[i];
-            omp_set_lock(&n);
-            node_level.insert(std::make_pair(cur_node, lev));
-            omp_unset_lock(&n);
             list<int>nb;
 
             map<int, std::list<int> >::iterator it = graph.find(cur_node);
@@ -158,27 +159,26 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
                 nb = it->second;
 
                 std::list<int>::iterator it;
+                #pragma omp parallel
                 for (it = nb.begin(); it != nb.end(); ++it)
                 {
-                    omp_set_lock(&l);
-                    if(visited.find(*it) == visited.end())
-                    {
-                        omp_set_lock(&m);
+                        omp_set_lock(&m[*it]);
                         if(visited.find(*it) == visited.end())
-                          visited.insert(std::make_pair(*it, 1));
-                        omp_unset_lock(&m);
-                        if(visited.find(*it) != visited.end())
                         {
-                        omp_set_lock(&k);
+
+                        visited.insert(std::make_pair(*it, 1));
                         next_verts.push(*it);
-                        omp_unset_lock(&k);
+
+                        node_level.insert(std::make_pair(*it, lev));
+
                         }
-                    }
-                    omp_unset_lock(&l);
+                        omp_unset_lock(&m[*it]);
+
+
                 }
             }
         }
-        #pragma omp barrier
+        //#pragma omp barrier
         //next_verts = temp_queue;
         lev++;
     }
