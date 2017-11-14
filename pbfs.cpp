@@ -167,11 +167,12 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
                         omp_set_lock(&m[*it]);
                         if(!visited[*it])
                         {
-                          omp_set_lock(&k);
                           visited[*it] = true;
+                          omp_set_lock(&k);
                           next_verts.push(*it);
-                          omp_unset_lock(&k);
                           node_level.insert(std::make_pair(*it, lev));
+                          omp_unset_lock(&k);
+
 
                         }
                         omp_unset_lock(&m[*it]);
