@@ -17,6 +17,7 @@ typedef std::map<int, std::list<int> > adjacency_list;
 typedef std::map<int, int > order_list;
 
 void read_adjacency_list(adjacency_list&, char*);
+void read_graph(adjacency_list&, char*);
 void read_order_list(order_list&, char*);
 std::map<int, int> breadth_first_search(adjacency_list&, int );
 void print_graph( adjacency_list );
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
     adjacency_list graph;
     order_list order;
     read_adjacency_list(graph, inputfile);
-  //  print_graph(graph);
+  //print_graph(graph);
     if( graph.find(src) == graph.end() ) {
         cout << "error: non-existant source" << endl;
         return -1;
@@ -45,6 +46,7 @@ int main(int argc, char* argv[]) {
     read_order_list(order, orderfile);
     map<int, int> vert_orders;
     map<int, int> node_level = breadth_first_search(graph, src);
+   // print_orders(node_level);
     // Verification and OUTPUT GETS PRINTED HERE
     if(verify(node_level, order))
     {

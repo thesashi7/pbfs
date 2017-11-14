@@ -6,7 +6,7 @@
 
 
 
-    #define MAX_VERTICES 9000;
+    #define MAX_VERTICES 100000;
 
     #define MAX_EDGES MAX_VERTICES-1;
 
@@ -46,17 +46,17 @@
 
                     int linkedVertex;
                     //left nb
-                    linkedVertex = (vertexCounter) + 1;
+                    linkedVertex = (2*vertexCounter) + 1;
                     if(linkedVertex >= numberOfVertices)
-                      break;
+                    {}
                     //graph[vertexCounter][0] = graph[linkedVertex];
-                    fprintf(ofs, " %d", linkedVertex);
+                    else fprintf(ofs, " %d", linkedVertex);
 
-                    linkedVertex = (vertexCounter) + 2;
+                    linkedVertex = (2*vertexCounter) + 2;
                     if(linkedVertex >= numberOfVertices)
-                      break;
+                    {}
                     //graph[vertexCounter][0] = graph[linkedVertex];
-                    fprintf(ofs, " %d", linkedVertex);
+                    else fprintf(ofs, " %d", linkedVertex);
 
 
 
@@ -66,7 +66,6 @@
             //printf("\n");
 
         }
-
         return 1;
 
     }

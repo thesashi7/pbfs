@@ -13,9 +13,10 @@
 #include <sys/time.h>
 
 using namespace std;
+//bool **graph;
 
 // short-cut for declaring a graph
-typedef std::map<int, std::list<int> > adjacency_list;
+typedef std::map<int, std::vector<int> > adjacency_list;
 typedef unsigned long long uint64; //for timing
 
 void read_adjacency_list(adjacency_list&, char*);
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
 }
 
 /* read an adjacency list */
+/* read an adjacency list */
 void read_adjacency_list(adjacency_list &g, char* inputfile) {
 
     std::ifstream infile;
@@ -66,7 +68,7 @@ void read_adjacency_list(adjacency_list &g, char* inputfile) {
     std::string line;
 
     int v1;
-    std::list<int> adjacent_verts;
+    std::vector<int> adjacent_verts;
 
     // for each line, get numbers after a space
     while( getline(infile, line) ) {
@@ -89,16 +91,15 @@ void read_adjacency_list(adjacency_list &g, char* inputfile) {
 
 void print_graph( adjacency_list g ) {
     adjacency_list::iterator g_itr;
-    list<int> row;
-    list<int>::iterator row_itr;
+    vector<int> row;
     for( g_itr = g.begin(); g_itr != g.end(); ++g_itr ) {
 
         int v = (*g_itr).first;
         cout << v << ": ";
 
         row = (*g_itr).second;
-        for( row_itr = row.begin(); row_itr != row.end(); ++row_itr ) {
-            cout << *row_itr << " ";
+        for( int i=0; i<row.size(); i++ ) {
+            cout << row[i] << " ";
         }
         cout << endl;
     }
@@ -109,6 +110,7 @@ void print_graph( adjacency_list g ) {
 
 // perform parallel breadth-first search
 map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
+
  map<int, int> node_level;
     omp_lock_t l;
     omp_lock_t k;
@@ -116,11 +118,13 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
     omp_lock_t n;
     omp_init_lock(&l);
     omp_init_lock(&k);
+    #pragma omp parallel for
     for(int i=0; i<graph.size()+1; i++)
       omp_init_lock(&m[i]);
     omp_init_lock(&n);
     // initialize visited and queue
     bool visited[graph.size()+1];
+    #pragma omp parallel for
     for(int i=0; i<graph.size()+1; i++)
       visited[i] = false;
     queue<int> next_verts;
@@ -132,19 +136,21 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
     int lev = 0;
     next_verts.push(src);
     visited[src] = true;
-    node_level.insert(std::make_pair(src, lev));
-    lev++;
+    //node_level.insert(std::make_pair(src, lev));
+	cout<<"starting"<<endl;
     while(next_verts.size()>0)
     {
         vector<int> level;
         vector<int> temp_list;
         while(next_verts.size() > 0)
         {
-          temp_list.push_back(next_verts.front());
+					int c_n = next_verts.front();
+    			node_level.insert(std::make_pair(c_n, lev));
+          temp_list.push_back(c_n);
           next_verts.pop();
         }
         int size = temp_list.size();
-        #pragma omp parallel
+        #pragma omp parallel for
         for(int i=0; i<size; i++)
         {
             //no need to lock this cuz its already divided to different threads by
@@ -152,30 +158,30 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
             int cur_node = temp_list[i];
             list<int>nb;
 
-            map<int, std::list<int> >::iterator it = graph.find(cur_node);
-
+            map<int, std::vector<int> >::iterator it = graph.find(cur_node);
+            //cout<<cur_node<<endl;
+            //cout<<omp_get_thread_num()<<endl;
 
             if(it != graph.end())
             {
+
+                std::vector<int> v = it->second;
                 // 'it' is local for each thread
-                nb = it->second;
 
-                std::list<int>::iterator it;
-                #pragma omp parallel
-                for (it = nb.begin(); it != nb.end(); ++it)
+                for (int j=0; j<v.size(); j++)
                 {
-                        omp_set_lock(&m[*it]);
-                        if(!visited[*it])
+                   
+
+                        omp_set_lock(&m[v[j]]);
+                        if(!visited[v[j]])
                         {
-                          visited[*it] = true;
-                          omp_set_lock(&k);
-                          next_verts.push(*it);
-                          node_level.insert(std::make_pair(*it, lev));
-                          omp_unset_lock(&k);
 
-
+                          visited[v[j]] = true;
+													omp_set_lock(&n);
+                          next_verts.push(v[j]);
+                   				omp_unset_lock(&n);
                         }
-                        omp_unset_lock(&m[*it]);
+                        omp_unset_lock(&m[v[j]]);
                 }
             }
         }
