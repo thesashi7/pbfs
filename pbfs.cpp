@@ -112,11 +112,11 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
  map<int, int> node_level;
     omp_lock_t l;
     omp_lock_t k;
-    omp_lock_t m[graph.size()];
+    omp_lock_t m[graph.size()+1];
     omp_lock_t n;
     omp_init_lock(&l);
     omp_init_lock(&k);
-    for(int i=0; i<graph.size(); i++)
+    for(int i=0; i<graph.size()+1; i++)
       omp_init_lock(&m[i]);
     omp_init_lock(&n);
     // initialize visited and queue
@@ -165,16 +165,12 @@ map<int, int> parallel_breadth_first_search( adjacency_list& graph, int src) {
                         omp_set_lock(&m[*it]);
                         if(visited.find(*it) == visited.end())
                         {
-
-                        visited.insert(std::make_pair(*it, 1));
-                        next_verts.push(*it);
-
-                        node_level.insert(std::make_pair(*it, lev));
+                          visited.insert(std::make_pair(*it, 1));
+                          next_verts.push(*it);
+                          node_level.insert(std::make_pair(*it, lev));
 
                         }
                         omp_unset_lock(&m[*it]);
-
-
                 }
             }
         }

@@ -46,13 +46,13 @@
 
                     int linkedVertex;
                     //left nb
-                    linkedVertex = (2*vertexCounter) + 1;
+                    linkedVertex = (vertexCounter) + 1;
                     if(linkedVertex >= numberOfVertices)
                       break;
                     //graph[vertexCounter][0] = graph[linkedVertex];
                     fprintf(ofs, " %d", linkedVertex);
 
-                    linkedVertex = (2*vertexCounter) + 2;
+                    linkedVertex = (vertexCounter) + 2;
                     if(linkedVertex >= numberOfVertices)
                       break;
                     //graph[vertexCounter][0] = graph[linkedVertex];
