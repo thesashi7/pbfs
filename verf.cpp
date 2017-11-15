@@ -1,6 +1,5 @@
 #include<iostream>
 #include<map>
-//#include<vector>
 #include<list>
 #include<cstdlib>
 #include<fstream>
@@ -28,7 +27,7 @@ std::vector<std::string> split(string, char);
 int main(int argc, char* argv[]) {
 
     if(argc < 3) {
-        std::cout << "usage:  ./bfs  input_graph  src" << std::endl;
+        std::cout << "usage:  ./bfs  input_graph  src  order_file" << std::endl;
         return -1;
     }
     char* inputfile = argv[1];
@@ -38,23 +37,24 @@ int main(int argc, char* argv[]) {
     adjacency_list graph;
     order_list order;
     read_adjacency_list(graph, inputfile);
-  //print_graph(graph);
+
     if( graph.find(src) == graph.end() ) {
         cout << "error: non-existant source" << endl;
         return -1;
     }
+    
     read_order_list(order, orderfile);
     map<int, int> vert_orders;
     map<int, int> node_level = breadth_first_search(graph, src);
-   // print_orders(node_level);
-    // Verification and OUTPUT GETS PRINTED HERE
+   
+    // Verification with Output
     if(verify(node_level, order))
     {
-        std::cout<<"True\n";
+        std::cout << "True" << std::endl;;
     }
     else
     {
-        std::cout<<"False\n";
+        std::cout << "False" << std::endl;
     }
     return 0;
 }
@@ -115,12 +115,14 @@ void read_order_list(order_list &g, char* orderfile) {
 
     int vertex, level;
     // for each line, get the vertex and the level
+    
     while( getline(infile, line) ) {
       vector<string> splited = split(line,' ');
       vertex = atoi( splited[0].c_str() );
       level = atoi( splited[1].c_str() );
       g.insert(make_pair(vertex, level));
     }
+    
     infile.close();
 
     return;
